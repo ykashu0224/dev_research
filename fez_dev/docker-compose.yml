@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  backend:
+      build: 
+        context: ./backend
+        args:
+          DEVELOPER_UID: $DEVELOPER_UID
+      container_name: fez_dev_app_$BRANCH_NAME
+      volumes:
+        - ./backend/django:/home/fez
+      expose:
+        - "8001"
+      depends_on:
+        - db
+        
+  web:
+      build:
+        context: ./web
+        args:
+          DEVELOPER_UID: $DEVELOPER_UID
+      container_name: fez_dev_web_$BRANCH_NAME
+      ports:
+        - "8000:8000"
+        - "5000:5000"
+      environment:
+        TZ: 'Asia/Tokyo'
+      volumes:
+        - ./web/conf:/etc/nginx/conf.d
+        - ./web/uwsgi_params:/etc/nginx/uwsgi_params
+        - ./web/nuxt/:/home/fez/
+        # - ./web/error_log/error.log:/var/log/nginx/error.log
+        - ./backend/django/static:/home/fez/static
+      depends_on:
+        - backend
+
+  db:
+      build:
+        context: ./db
+        args:
+          DEVELOPER_UID: $DEVELOPER_UID
+      container_name: fez_dev_db_$BRANCH_NAME
+      ports:
+        - "3306:3306"
+      environment:
+        TZ: 'Asia/Tokyo'
+      volumes:
+        - ./db/lib/:/var/lib/mysql
+        - ./db/conf/my.cnf:/etc/my.cnf
+        # - ./db/logs/error/mysqld.log:/var/log/mysqld.log
